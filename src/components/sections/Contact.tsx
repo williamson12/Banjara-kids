@@ -110,13 +110,49 @@ export default function Contact() {
 
   const { isSubmitting } = form.formState;
 
-  function onSubmit(values: FormValues) {
-    console.log('Form submission:', values);
-    toast({
-      title: 'Request Received',
-      description: 'Our admissions team will contact you within 24 hours to confirm your visit.',
-    });
-    form.reset();
+  async function onSubmit(values: FormValues) {
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          // We use the environment variable, or prompt the user if it's missing.
+          access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "YOUR_ACCESS_KEY_HERE",
+          subject: `New Campus Visit Request from ${values.name}`,
+          from_name: "Banjara Kids Website",
+          // Send all form fields
+          name: values.name,
+          email: values.email,
+          phone: values.phone,
+          childAge: values.childAge,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: 'Request Received',
+          description: 'Our admissions team will contact you within 24 hours to confirm your visit.',
+        });
+        form.reset();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Submission Failed",
+          description: result.message || "Something went wrong. Please try again.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: "Please check your internet connection and try again.",
+      });
+    }
   }
 
   return (
